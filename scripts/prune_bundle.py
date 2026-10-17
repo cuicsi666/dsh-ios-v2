@@ -6,9 +6,9 @@ import sys
 
 ROOT = sys.argv[1] if len(sys.argv) > 1 else "resources/dsh/node_modules"
 
-DROP_DIRS = {"test", "tests", "__tests__", "__mocks__", "docs", "doc",
-             "example", "examples", "benchmark", "benchmarks", ".github",
-             "coverage", ".nyc_output", "man"}
+# 只删「确定不是运行时代码」的目录：泛化名字（doc/docs/test）可能是真实模块，
+# 上一版就踩了 ../doc/directives.js 被误删导致 dsh 起不来。
+DROP_DIRS = {"__tests__", "__mocks__", ".github", "coverage", ".nyc_output"}
 DROP_EXT = {".map", ".md", ".markdown", ".flow", ".coffee",
             ".d.ts.map", ".tgz", ".zip"}
 
