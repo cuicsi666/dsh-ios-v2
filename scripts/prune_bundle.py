@@ -9,8 +9,8 @@ ROOT = sys.argv[1] if len(sys.argv) > 1 else "resources/dsh/node_modules"
 # 只删「确定不是运行时代码」的目录：泛化名字（doc/docs/test）可能是真实模块，
 # 上一版就踩了 ../doc/directives.js 被误删导致 dsh 起不来。
 DROP_DIRS = {"__tests__", "__mocks__", ".github", "coverage", ".nyc_output"}
-DROP_EXT = {".map", ".md", ".markdown", ".flow", ".coffee",
-            ".d.ts.map", ".tgz", ".zip"}
+# .md 可能是运行时提示词/模板（不可删）；只删确定无用的产物
+DROP_EXT = {".map", ".d.ts.map", ".tgz", ".zip", ".flow", ".coffee"}
 
 removed = 0
 freed = 0

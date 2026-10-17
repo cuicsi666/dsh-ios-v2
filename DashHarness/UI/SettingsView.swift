@@ -22,7 +22,7 @@ struct SettingsView: View {
                 Section {
                     Toggle("连接远程 dsh", isOn: $settings.remoteMode)
                     if settings.remoteMode {
-                        TextField("https://example.com/?token=…", text: $remoteEdit)
+                        TextField("https://example.com/?token=…", text: remoteEdit)
                             .textInputAutocapitalization(.never)
                             .autocorrectionDisabled()
                             .keyboardType(.URL)
