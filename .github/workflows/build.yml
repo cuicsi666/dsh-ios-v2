@@ -1,0 +1,101 @@
+name: build-ipa-v2
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: dsh-v2-build
+  cancel-in-progress: true
+
+env:
+  NODE_V: "22.23.3"
+  DSH_VER: "0.2.0-rc.2"
+  IPA_NAME: "dsh助手_V2.ipa"
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: 复用已交叉编译的 node-for-ios
+        run: |
+          mkdir -p resources /tmp/nodebin
+          curl -fL --retry 3 -o /tmp/nodebin/node-ios-arm64 \
+            https://github.com/cuicsi666/dsh-ios/releases/download/node-bin/node-ios-arm64
+          curl -fL --retry 3 -o /tmp/nodebin/node-version.txt \
+            https://github.com/cuicsi666/dsh-ios/releases/download/node-bin/node-version.txt
+          VER=$(cat /tmp/nodebin/node-version.txt)
+          echo "cached node version: $VER (want $NODE_V)"
+          python3 -c "
+import os,sys
+p='/tmp/nodebin/node-ios-arm64'
+ok=os.path.exists(p) and open(p,'rb').read(4)==bytes.fromhex('cffaedfe')
+print('size',os.path.getsize(p) if os.path.exists(p) else 0,'magic_ok',ok)
+sys.exit(0 if ok else 1)"
+          [ "$VER" = "$NODE_V" ] || echo "!! 版本不匹配，仍先尝试使用"
+          cp /tmp/nodebin/node-ios-arm64 resources/node
+          chmod +x resources/node
+      - name: 安装 dsh + 裁剪
+        run: bash scripts/assemble_resources.sh
+        env:
+          DSH_VER: ${{ env.DSH_VER }}
+
+      - name: 冒烟测试（宿主 node，验证裁剪后仍可启动）
+        run: |
+          set -e
+          cd resources/dsh
+          ENTRY=node_modules/@deepseek-ai/dsh/lib/bin.js
+          rm -f /tmp/smoke.log
+          (node "$ENTRY" web --no-open --port 3299 > /tmp/smoke.log 2>&1 &)
+          ok=0
+          for i in $(seq 1 40); do
+            sleep 3
+            if grep -qE 'token=[A-Za-z0-9_-]{8,}' /tmp/smoke.log; then ok=1; break; fi
+          done
+          echo "--- smoke log ---"; tail -25 /tmp/smoke.log || true
+          [ "$ok" = "1" ] || { echo "!! 未拿到 token"; exit 1; }
+          TOKEN=$(grep -oE 'token=[A-Za-z0-9_-]{8,}' /tmp/smoke.log | head -1 | cut -d= -f2)
+          echo "token len=${#TOKEN}"
+          CODE=$(curl -s -c /tmp/cj -o /tmp/p.html -w "%{http_code}" "http://127.0.0.1:3299/?token=$TOKEN")
+          CODE2=$(curl -s -b /tmp/cj -o /tmp/p2.html -w "%{http_code}" "http://127.0.0.1:3299/")
+          echo "exchange=$CODE plain=$CODE2 bytes=$(wc -c < /tmp/p2.html)"
+          grep -qi "<!doctype html" /tmp/p2.html || { echo "!! HTML 校验失败"; head -c 300 /tmp/p2.html; exit 1; }
+          pkill -f "web --no-open --port 3299" || true
+          echo "冒烟测试通过 ✅"
+
+      - name: 安装 xcodegen / ldid
+        run: |
+          brew install xcodegen ldid 2>/dev/null || { brew install xcodegen; brew install ldid; }
+          xcodegen --version; ldid -v 2>/dev/null | head -2 || true
+
+      - name: 构建 IPA
+        run: bash scripts/build_ipa.sh
+
+      - name: 上传产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: dsh-ipa-v2
+          path: dist/dsh助手_V2.ipa
+          retention-days: 14
+
+      - name: 发布 Release
+        if: github.ref == 'refs/heads/main'
+        continue-on-error: true
+        run: |
+          set -e
+          TAG="V2"
+          gh release delete "$TAG" --yes 2>/dev/null || true
+          gh release create "$TAG" "dist/$IPA_NAME" \
+            --title "dsh助手 V2" \
+            --notes "重构版：内嵌 Node 22 + DeepSeek Harness ${DSH_VER}，原生外壳重写（启动进度/看门狗自动重启/后台保活/移动端适配/下载与分享）"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

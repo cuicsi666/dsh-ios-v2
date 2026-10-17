@@ -1,0 +1,76 @@
+name: DashHarness
+options:
+  bundleIdPrefix: com.cuicsi
+  deploymentTarget:
+    iOS: "16.0"
+  createIntermediateGroups: true
+  groupSortPosition: top
+
+settings:
+  base:
+    MARKETING_VERSION: "2.0"
+    CURRENT_PROJECT_VERSION: "1"
+    SWIFT_VERSION: "5.9"
+    ENABLE_BITCODE: NO
+    CODE_SIGNING_ALLOWED: NO
+    CODE_SIGN_IDENTITY: ""
+    DEVELOPMENT_TEAM: ""
+    ONLY_ACTIVE_ARCH: NO
+    IPHONEOS_DEPLOYMENT_TARGET: "16.0"
+
+targets:
+  DashHarness:
+    type: application
+    platform: iOS
+    sources:
+      - path: DashHarness
+        excludes:
+          - "Info.plist"
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.cuicsi.dsh
+        PRODUCT_NAME: DashHarness
+        INFOPLIST_FILE: DashHarness/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        TARGETED_DEVICE_FAMILY: "1,2"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        SWIFT_EMIT_LOC_STRINGS: NO
+    dependencies:
+      - sdk: WebKit.framework
+      - sdk: AVFoundation.framework
+      - sdk: UniformTypeIdentifiers.framework
+      - sdk: SafariServices.framework
+    info:
+      path: DashHarness/Info.plist
+      properties:
+        CFBundleDisplayName: dsh助手
+        CFBundleName: dsh助手
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        CFBundleDevelopmentRegion: zh_CN
+        UILaunchStoryboardName: LaunchScreen
+        LSRequiresIPhoneOS: true
+        UIBackgroundModes:
+          - audio
+        UIApplicationSupportsIndirectInputEvents: true
+        UIFileSharingEnabled: true
+        LSSupportsOpeningDocumentsInPlace: true
+        UIViewControllerBasedStatusBarAppearance: true
+        UIStatusBarStyle: UIStatusBarStyleDefault
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: true
+          NSAllowsLocalNetworking: true
+        NSPhotoLibraryUsageDescription: 选择图片上传给 dsh 助手
+        NSPhotoLibraryAddUsageDescription: 保存 dsh 助手生成的文件
+        NSCameraUsageDescription: 拍照上传给 dsh 助手
+        NSMicrophoneUsageDescription: 语音输入给 dsh 助手
+        ITSAppUsesNonExemptEncryption: false
