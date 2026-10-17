@@ -35,12 +35,11 @@ jobs:
             https://github.com/cuicsi666/dsh-ios/releases/download/node-bin/node-version.txt
           VER=$(cat /tmp/nodebin/node-version.txt)
           echo "cached node version: $VER (want $NODE_V)"
-          python3 -c "
-import os,sys
-p='/tmp/nodebin/node-ios-arm64'
-ok=os.path.exists(p) and open(p,'rb').read(4)==bytes.fromhex('cffaedfe')
-print('size',os.path.getsize(p) if os.path.exists(p) else 0,'magic_ok',ok)
-sys.exit(0 if ok else 1)"
+          MAGIC=$(od -An -tx1 -N4 /tmp/nodebin/node-ios-arm64 | tr -d ' \n')
+          SIZE=$(stat -f%z /tmp/nodebin/node-ios-arm64)
+          echo "magic=$MAGIC size=$SIZE"
+          [ "$MAGIC" = "cffaedfe" ] || { echo "!! node 魔数异常"; exit 1; }
+          [ "$SIZE" -gt 50000000 ] || { echo "!! node 体积异常"; exit 1; }
           [ "$VER" = "$NODE_V" ] || echo "!! 版本不匹配，仍先尝试使用"
           cp /tmp/nodebin/node-ios-arm64 resources/node
           chmod +x resources/node
