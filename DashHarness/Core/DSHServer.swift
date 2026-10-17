@@ -203,10 +203,8 @@ final class DSHServer: ObservableObject {
 
         var attr: posix_spawnattr_t? = nil
         posix_spawnattr_init(&attr)
-        var flags: Int16 = POSIX_SPAWN_SETPGROUP
-        posix_spawnattr_setflags(&attr, flags)
-        var pgroup: pid_t = 0
-        posix_spawnattr_setpgroup(&attr, pgroup)
+        posix_spawnattr_setflags(&attr, Int16(POSIX_SPAWN_SETPGROUP))
+        posix_spawnattr_setpgroup(&attr, 0)
 
         var pid: pid_t = 0
         let rc = posix_spawn(&pid, nodePath, &actions, &attr, &cArgs, &cEnv)
@@ -442,7 +440,7 @@ final class DSHServer: ObservableObject {
     private func appendLog(_ s: String) {
         guard !logPath.isEmpty else { return }
         if let fh = FileHandle(forWritingAtPath: logPath) {
-            try? fh.seekToEnd()
+            _ = try? fh.seekToEnd()
             try? fh.write(contentsOf: s.data(using: .utf8) ?? Data())
             try? fh.close()
         }
