@@ -19,7 +19,7 @@ final class AppSettings: ObservableObject {
     @AppStorage(Key.remoteMode) var remoteMode: Bool = false { didSet { objectWillChange.send() } }
     @AppStorage(Key.remoteURL) var remoteURL: String = ""
     @AppStorage(Key.autoRestart) var autoRestart: Bool = true
-    @AppStorage(Key.preferredPort) var preferredPort: Int = 0
+    @AppStorage(Key.preferredPort) var preferredPort: Int = 3280
 
     private init() {}
 }

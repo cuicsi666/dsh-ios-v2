@@ -212,7 +212,11 @@ final class DSHServer: ObservableObject {
         posix_spawnattr_destroy(&attr)
 
         if rc != 0 {
-            let msg = "posix_spawn 失败 errno=\(rc) (\(String(cString: strerror(rc))))，多为签名/权限问题"
+            let reason = String(cString: strerror(rc))
+            var msg = "无法启动内嵌 node：errno=\(rc) (\(reason))"
+            if rc == EPERM {
+                msg += "\n\n这是 iOS 的代码签名限制：侧载工具重新签名时没有给 App 内的 node 可执行文件签名。\n请在安装器（全能签/ESign）里勾选「全部可执行文件/深度签名」后重装；若仍失败，请告诉我，我切到内嵌库（libnode）版本。"
+            }
             return (false, msg)
         }
         childPID = pid
